@@ -1,4 +1,5 @@
-from math import sin
+import interval
+import math
 
 
 # Generic class for expressions
@@ -33,13 +34,13 @@ class Expr:
         return nexpr
 
 # Constant expression
-class Const(Expr):
+class const(Expr):
     def __init__(self, value):
         self.value = value
         self.range = [value, value]
 
 # Literal
-class Ident(Expr):
+class ident(Expr):
     def __init__(self, x):
         self.value = 0.5 * (x[0] + x[1])
         self.L = 1
@@ -49,23 +50,17 @@ class Ident(Expr):
 
 # Helper
 def getLip(x):
-    L = 0
-    for c in x:
-        if abs(c.inf) > L:
-            L = c.inf
-        if abs(c.sup) > L:
-            L = c.sup
-    return L
+    return max(map(abs, x))
 
 # The sinus function
-class Sin(Expr):
+class sin(Expr):
     def __init__(self, eother):
         self.x = eother.x
-        self.value = sin(eother.value)
-        y = imath.cos(interval(self.x))
-        # print(self.x)
-        # L = getLip(y)
-        L = 1
+        self.value = math.sin(eother.value)
+        y = interval.cos(self.x)
+        print(self.x)
+        L = getLip(y)
+        # L = 1
         print(L)
         self.L = L * eother.L
         self.compbnd()
