@@ -1,11 +1,12 @@
 from lipexpr import *
 
 def f(x):
-    return sin(ident(x))
+    return -(ident(x) * sin(ident(x)))
 
 
 
-xrange = [0, 2 * math.pi]
+
+xrange = [0, 10]
 P = []
 P.append(xrange)
 fr = 100000000
@@ -26,4 +27,4 @@ while len(P) > 0 and steps <= maxsteps:
         P.append(x2)
 
 print("Steps performed: " + str(steps))
-print(fr)
+print("Record: " + str(-fr))

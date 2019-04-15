@@ -21,6 +21,15 @@ class Expr:
     def __str__(self):
         return "value = " + str(self.value) + ", Lip = " + str(self.L) + ", range = " + str(self.range)
 
+    def __neg__(self):
+        nexpr = Expr()
+        nexpr.value = - self.value
+        nexpr.L = self.L
+        nexpr.x = self.x
+        nexpr.compbnd()
+        return nexpr
+
+
     def __add__(self, eother):
         nexpr = Expr()
         nexpr.value = self.value + eother.value
@@ -28,6 +37,17 @@ class Expr:
         nexpr.x = self.x
         nexpr.compbnd()
         return nexpr
+
+    def __mul__(self, eother):
+        nexpr = Expr()
+        nexpr.value = self.value * eother.value
+        mself = max(map(abs,self.range))
+        mother = max(map(abs, eother.range))
+        nexpr.L = self.L * mother + eother.L * mself
+        nexpr.x = self.x
+        nexpr.compbnd()
+        return nexpr
+
 
     def __call__(self, eother):
         nexpr = Expr()
