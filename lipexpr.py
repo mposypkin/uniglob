@@ -19,7 +19,7 @@ class Expr:
         self.range[1] = self.value + self.L * hl
 
     def __str__(self):
-        return "value = " + str(self.value) + ", Lip = " + str(self.L) + ", range = " + str(self.range)
+        return "value = " + str(self.value) + ", Lip = " + str(self.L) + ", range = " + str(self.range) + ", x = " + str(self.x)
 
     def __neg__(self):
         nexpr = Expr()
