@@ -1,5 +1,22 @@
 import math
 
+class Interval:
+    x = [0, 0]
+
+    def __init__(self, x):
+        self.x = x.copy()
+
+
+    def __repr__(self):
+        return "[" + str(self.x[0]) + ", " + str(self.x[1]) + "]"
+
+    def __getitem__(self, item):
+        return self.x[item]
+
+    def __setitem__(self, key, value):
+        self.x.__setitem__(key, value)
+
+
 def cos(x):
     y = [math.cos(x[0]), math.cos(x[1])]
     pi2 = 2 * math.pi
@@ -12,9 +29,13 @@ def cos(x):
         a = -1
     else:
         a = min(y)
-    return [a,b]
+    return Interval([a,b])
 
 if (__name__ == '__main__'):
-    print(cos([0, math.pi / 2]))
-    print(cos([- math.pi / 2, math.pi / 2]))
-    print(cos([- 3 * math.pi / 2, - math.pi / 2]))
+
+    x = Interval([-1, 2])
+    print(x)
+
+    print(cos(Interval([0, math.pi / 2])))
+    print(cos(Interval([- math.pi / 2, math.pi / 2])))
+    print(cos(Interval([- 3 * math.pi / 2, - math.pi / 2])))
