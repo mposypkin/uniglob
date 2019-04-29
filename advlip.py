@@ -55,9 +55,10 @@ class Expr:
 
 # Constant expression
 class const(Expr):
-    def __init__(self, value):
+    def __init__(self, value, x):
         self.value = value
         self.range = interval.Interval([value, value])
+        self.x = x
 
 # Literal
 class ident(Expr):
