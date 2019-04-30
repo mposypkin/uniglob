@@ -38,6 +38,15 @@ class Expr:
         nexpr.range = self.range + eother.range
         return nexpr
 
+    def __sub__(self, other):
+        nexpr = Expr()
+        nexpr.value = self.value - other.value
+        nexpr.S = self.S - other.S
+        nexpr.x = self.x
+        nexpr.range = self.range - other.range
+        return nexpr
+
+
     def __pow__(self, other):
         nexpr = Expr()
         nexpr.value = self.value ** other
@@ -50,11 +59,9 @@ class Expr:
     def __mul__(self, eother):
         nexpr = Expr()
         nexpr.value = self.value * eother.value
-        mself = max(map(abs,self.range))
-        mother = max(map(abs, eother.range))
-        nexpr.L = self.L * mother + eother.L * mself
+        nexpr.range = self.range * eother.range
+        nexpr.S = self.range * eother.S + self.S * interval.Interval([eother.value, eother.value])
         nexpr.x = self.x
-        nexpr.compbnd()
         return nexpr
 
 
@@ -105,6 +112,6 @@ if (__name__ == '__main__'):
     print(s)
 
     def f(x):
-        return ident(x)**2 + const(2, x)
-
+        return ident(x)**2 - const(4, x) * ident(x) + const(2, x)
+        # return const(4, x) * ident(x)
     print(f([1,7]))

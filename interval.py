@@ -28,6 +28,12 @@ class Interval:
         ninterval.x[1] = self.x[1] + other.x[1]
         return ninterval
 
+    def __sub__(self, other):
+        ninterval = Interval(self.x)
+        ninterval.x[0] = self.x[0] - other.x[1]
+        ninterval.x[1] = self.x[1] - other.x[0]
+        return ninterval
+
     def __pow__(self, other):
         ninterval = Interval(self.x)
         if other == 2:
