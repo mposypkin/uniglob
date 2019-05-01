@@ -12,11 +12,17 @@ class Expr:
     range = interval.Interval([0, 0])
     # The Source Interval
     x = interval.Interval([0, 0])
+    # If true then reeval range at every step
+    flagRecompRange = False
 
     def compbnd(self):
-        hl = 0.5 * (self.x[1] - self.x[0])
-        self.range[0] = self.value - self.L * hl
-        self.range[1] = self.value + self.L * hl
+        if Expr.flagRecompRange:
+            c = self.x.mid()
+            xc = self.x - interval.Interval([c, c])
+            fc = interval.Interval([self.value, self.value])
+            bnd = fc + self.S * xc
+            self.range.intersec(bnd)
+
 
     def __repr__(self):
         return "value = " + str(self.value) + ", slope = " + str(self.S) + ", range = " + str(self.range) + ", x = " + str(self.x)
@@ -27,6 +33,7 @@ class Expr:
         nexpr.S = - self.S
         nexpr.x = self.x
         nexpr.range = - self.range
+        nexpr.compbnd()
         return nexpr
 
 
@@ -36,6 +43,7 @@ class Expr:
         nexpr.S = self.S + eother.S
         nexpr.x = self.x
         nexpr.range = self.range + eother.range
+        nexpr.compbnd()
         return nexpr
 
     def __sub__(self, other):
@@ -44,6 +52,7 @@ class Expr:
         nexpr.S = self.S - other.S
         nexpr.x = self.x
         nexpr.range = self.range - other.range
+        nexpr.compbnd()
         return nexpr
 
 
@@ -54,6 +63,7 @@ class Expr:
         nexpr.range = self.range ** other
         if other == 2:
             nexpr.S = self.S * (self.range + interval.Interval([self.value, self.value]))
+        nexpr.compbnd()
         return nexpr
 
     def __mul__(self, eother):
@@ -62,6 +72,7 @@ class Expr:
         nexpr.range = self.range * eother.range
         nexpr.S = self.range * eother.S + self.S * interval.Interval([eother.value, eother.value])
         nexpr.x = self.x
+        nexpr.compbnd()
         return nexpr
 
 
@@ -112,6 +123,16 @@ if (__name__ == '__main__'):
     print(s)
 
     def f(x):
-        return ident(x)**2 - const(4, x) * ident(x) + const(2, x)
+        # return ident(x)**4 - const(10, x) * ident(x)**3 + const(35, x) * ident(x)**2 - const(50, x) * ident(x) + const(24,x)
+        return ident(x) * (ident(x)**2 - const(4, x) * ident(x) + const(2, x))
         # return const(4, x) * ident(x)
-    print(f([1,7]))
+    ex1 = f([1,7])
+    print(ex1)
+    Expr.flagRecompRange = True
+    ex1.compbnd()
+    print(ex1)
+    ex2 = f([1, 7])
+    # Expr.flagRecompRange = True
+    # ex.compbnd()
+    print(ex2)
+
