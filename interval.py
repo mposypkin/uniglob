@@ -44,14 +44,20 @@ class Interval:
 
     def __pow__(self, other):
         ninterval = Interval(self.x)
-        if other == 2:
-            u = self.x[0] * self.x[0]
-            v = self.x[1] * self.x[1]
+        u = self.x[0] ** other
+        v = self.x[1] ** other
+        if other == 0:
+            ninterval.x[0] = 1
+            ninterval.x[1] = 1
+        elif other % 2 == 0:
             ninterval.x[1] = max(u, v)
             if self.x[0] <= 0 and self.x[1] >= 0:
                 ninterval.x[0] = 0
             else:
                 ninterval.x[0] = min(u, v)
+        else:
+            ninterval.x[0] = u
+            ninterval.x[1] = v
         return ninterval
 
     def __mul__(self, other):
@@ -83,6 +89,7 @@ if (__name__ == '__main__'):
     print(x)
     print(-x)
     print(x**2)
+    print(x**3)
     y = Interval([5,6])
     print(x + y)
     print(x * y)

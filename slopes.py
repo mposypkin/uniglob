@@ -56,13 +56,29 @@ class Expr:
         return nexpr
 
 
-    def __pow__(self, other):
+    def __pow__(self, k):
         nexpr = Expr()
-        nexpr.value = self.value ** other
+        nexpr.value = self.value ** k
         nexpr.x = self.x
-        nexpr.range = self.range ** other
-        if other == 2:
-            nexpr.S = self.S * (self.range + interval.Interval([self.value, self.value]))
+        nexpr.range = self.range ** k
+        sp = interval.Interval([0,0])
+        if self.value == self.range[0] or self.value == self.range[1]:
+            sp = interval.Interval([k, k]) * (self.range ** (k - 1))
+        elif k == 2:
+            sp = self.range + interval.Interval([self.value, self.value])
+        elif k % 2:
+            sp[0] = (self.range[0] ** k - nexpr.value) / (self.range[0] - self.value)
+            sp[1] = (self.range[1] ** k - nexpr.value) / (self.range[1] - self.value)
+        else:
+            if self.range[0] >= 0:
+                sp[0] = (nexpr.range[0] - nexpr.value) / (self.range[0] - self.value)
+                sp[1] = (nexpr.range[1] - nexpr.value) / (self.range[1] - self.value)
+            elif self.range[1] <= 0:
+                sp[1] = (nexpr.range[0] - nexpr.value) / (self.range[0] - self.value)
+                sp[0] = (nexpr.range[1] - nexpr.value) / (self.range[1] - self.value)
+            else:
+                sp = interval.Interval([k, k]) * (self.range ** (k - 1))
+        nexpr.S = self.S * sp
         nexpr.compbnd()
         return nexpr
 
@@ -123,15 +139,18 @@ if (__name__ == '__main__'):
     print(s)
 
     def f(x):
+        return ident(x)**6 - const(15, x) * ident(x)**4 + const(27, x) * ident(x)**2 + const(250,x)
         # return ident(x)**4 - const(10, x) * ident(x)**3 + const(35, x) * ident(x)**2 - const(50, x) * ident(x) + const(24,x)
-        return ident(x) * (ident(x)**2 - const(4, x) * ident(x) + const(2, x))
+        # return ident(x) * (ident(x)**2 - const(4, x) * ident(x) + const(2, x))
         # return const(4, x) * ident(x)
-    ex1 = f([1,7])
+    # x = [1,7]
+    x = [0.75,1.75]
+    ex1 = f(x)
     print(ex1)
     Expr.flagRecompRange = True
     ex1.compbnd()
     print(ex1)
-    ex2 = f([1, 7])
+    ex2 = f(x)
     # Expr.flagRecompRange = True
     # ex.compbnd()
     print(ex2)
