@@ -66,7 +66,20 @@ class Interval:
         return Interval(b)
 
 
+def sin(x):
+    y = [math.sin(x[0]), math.sin(x[1])]
+    pi2 = 2 * math.pi
+    pi05 = math.pi / 2
+    if math.ceil((x[0] - pi05)/pi2) <= math.floor((x[1] - pi05)/pi2):
+        b = 1
+    else:
+        b = max(y)
 
+    if math.ceil((x[0] + pi05)/pi2) <= math.floor((x[1] + pi05)/pi2):
+        a = -1
+    else:
+        a = min(y)
+    return Interval([a,b])
 
 def cos(x):
     y = [math.cos(x[0]), math.cos(x[1])]
@@ -81,6 +94,10 @@ def cos(x):
     else:
         a = min(y)
     return Interval([a,b])
+
+def exp(x):
+    return Interval([math.exp(x[0]), math.exp(x[1])])
+
 
 if (__name__ == '__main__'):
 

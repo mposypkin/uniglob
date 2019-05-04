@@ -21,6 +21,7 @@ class Expr:
             xc = self.x - interval.Interval([c, c])
             fc = interval.Interval([self.value, self.value])
             bnd = fc + self.S * xc
+            print("bnd = ", bnd)
             self.range.intersec(bnd)
 
 
@@ -101,7 +102,7 @@ class const(Expr):
     def __init__(self, value, x):
         self.value = value
         self.S = interval.Interval([0,0])
-        self.x = interval.Interval(x)
+        self.x = interval.Interval([x[0], x[1]])
         self.range = interval.Interval([value, value])
 
 # Literal
@@ -109,23 +110,35 @@ class ident(Expr):
     def __init__(self, x):
         self.value = 0.5 * (x[0] + x[1])
         self.S = interval.Interval([1,1])
-        self.x = interval.Interval(x)
-        self.range = interval.Interval(x)
+        self.x = interval.Interval([x[0], x[1]])
+        self.range = interval.Interval([x[0], x[1]])
 
 
-
-# The sinus function
 class sin(Expr):
     def __init__(self, eother):
         self.x = eother.x
         self.value = math.sin(eother.value)
-        y = interval.cos(self.x)
-        print(self.x)
-        L = getLip(y)
-        # L = 1
-        print(L)
-        self.L = L * eother.L
+        self.range = interval.sin(eother.range)
+        y = interval.cos(eother.range)
+        self.S = eother.S * y
         self.compbnd()
+
+
+class exp(Expr):
+    def __init__(self, eother):
+        self.x = eother.x
+        self.value = math.exp(eother.value)
+        self.range = interval.exp(eother.range)
+        sp = interval.Interval([0, 0])
+        if eother.value == eother.range[0] or eother.value == eother.range[1]:
+            sp = self.range
+        else:
+            sp[0] = (self.range[0] - self.value) / (eother.range[0] - eother.value)
+            sp[1] = (self.range[1] - self.value) / (eother.range[1] - eother.value)
+        self.S = eother.S * sp
+        self.compbnd()
+
+
 
 # Check code
 if (__name__ == '__main__'):
@@ -139,7 +152,10 @@ if (__name__ == '__main__'):
     print(s)
 
     def f(x):
-        return ident(x)**6 - const(15, x) * ident(x)**4 + const(27, x) * ident(x)**2 + const(250,x)
+        # return sin(ident(x)) + sin(const(10 / 3, x) * ident(x))
+        return exp(ident(x)**2)
+        # return  (ident(x) + sin(ident(x))) * exp(- (ident(x)**2))
+        # return ident(x)**6 - const(15, x) * ident(x)**4 + const(27, x) * ident(x)**2 + const(250,x)
         # return ident(x)**4 - const(10, x) * ident(x)**3 + const(35, x) * ident(x)**2 - const(50, x) * ident(x) + const(24,x)
         # return ident(x) * (ident(x)**2 - const(4, x) * ident(x) + const(2, x))
         # return const(4, x) * ident(x)

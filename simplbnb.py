@@ -1,16 +1,17 @@
 # from lipexpr import *
 import interval
-from advlip import *
-
+# from advlip import *
+from slopes import *
 
 # def f(x):
 #     return -(ident(x) * sin(ident(x)))
 # xrange = [0, 10]
 
 def f(x):
-    return sin(ident(x)) + sin(const(10/3) * ident(x))
-xrange = interval.Interval([2.7, 7.5])
+    return sin(ident(x)) + sin(const(10/3, x) * ident(x))
 
+xrange = interval.Interval([2.7, 7.5])
+f(xrange)
 # def f(x):
 #     return sin(ident(x))
 # xrange = interval.Interval([2.7, 7.5])
@@ -42,3 +43,5 @@ while len(P) > 0 and steps <= maxsteps:
 
 print("Steps performed: " + str(steps))
 print("Record: " + str(-fr) + " at " + str(xr))
+print("Hi")
+print("Check: " + str(f([xr, xr]).value))
