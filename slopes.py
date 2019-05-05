@@ -1,6 +1,20 @@
 import interval
 import math
 
+# Some auxilary functions
+
+def compConvSlope(newRange, newValue, oldRange, oldValue):
+    sp = [0, 0]
+    sp[0] = (newRange[0] - newValue) / (oldRange[0] - oldValue)
+    sp[1] = (newRange[1] - newValue) / (oldRange[1] - oldValue)
+    return interval.Interval(sp)
+
+def compConcSlope(newRange, newValue, oldRange, oldValue):
+    sp = [0, 0]
+    sp[1] = (newRange[0] - newValue) / (oldRange[0] - oldValue)
+    sp[0] = (newRange[1] - newValue) / (oldRange[1] - oldValue)
+    return interval.Interval(sp)
+
 
 # Generic class for expressions
 class Expr:
@@ -21,9 +35,7 @@ class Expr:
             xc = self.x - interval.Interval([c, c])
             fc = interval.Interval([self.value, self.value])
             bnd = fc + self.S * xc
-            print("bnd = ", bnd)
             self.range.intersec(bnd)
-
 
     def __repr__(self):
         return "value = " + str(self.value) + ", slope = " + str(self.S) + ", range = " + str(self.range) + ", x = " + str(self.x)
@@ -68,15 +80,12 @@ class Expr:
         elif k == 2:
             sp = self.range + interval.Interval([self.value, self.value])
         elif k % 2:
-            sp[0] = (self.range[0] ** k - nexpr.value) / (self.range[0] - self.value)
-            sp[1] = (self.range[1] ** k - nexpr.value) / (self.range[1] - self.value)
+            sp = compConvSlope([self.range[0] ** k, self.range[1] ** k], nexpr.value, self.range, self.value)
         else:
             if self.range[0] >= 0:
-                sp[0] = (nexpr.range[0] - nexpr.value) / (self.range[0] - self.value)
-                sp[1] = (nexpr.range[1] - nexpr.value) / (self.range[1] - self.value)
+                sp = compConvSlope(nexpr.range, nexpr.value, self.range, self.value)
             elif self.range[1] <= 0:
-                sp[1] = (nexpr.range[0] - nexpr.value) / (self.range[0] - self.value)
-                sp[0] = (nexpr.range[1] - nexpr.value) / (self.range[1] - self.value)
+                sp = compConcSlope(nexpr.range, nexpr.value, self.range, self.value)
             else:
                 sp = interval.Interval([k, k]) * (self.range ** (k - 1))
         nexpr.S = self.S * sp
@@ -119,8 +128,20 @@ class sin(Expr):
         self.x = eother.x
         self.value = math.sin(eother.value)
         self.range = interval.sin(eother.range)
-        y = interval.cos(eother.range)
-        self.S = eother.S * y
+        sp = interval.Interval([0, 0])
+        if eother.value == eother.range[0] or eother.value == eother.range[1]:
+            sp = interval.cos(eother.range)
+        else:
+            pil = math.floor(math.floor(eother.range[0] / math.pi))
+            piu = math.ceil(math.ceil(eother.range[1] / math.pi))
+            if piu == pil + 1:
+                if piu % 2 == 0:
+                    sp = compConcSlope(self.range, self.value, eother.range, eother.value)
+                else:
+                    sp = compConvSlope(self.range, self.value, eother.range, eother.value)
+            else:
+                sp = interval.cos(eother.range)
+        self.S = eother.S * sp
         self.compbnd()
 
 
@@ -133,10 +154,23 @@ class exp(Expr):
         if eother.value == eother.range[0] or eother.value == eother.range[1]:
             sp = self.range
         else:
-            sp[0] = (self.range[0] - self.value) / (eother.range[0] - eother.value)
-            sp[1] = (self.range[1] - self.value) / (eother.range[1] - eother.value)
+            sp = compConvSlope(self.range, self.value, eother.range, eother.value)
         self.S = eother.S * sp
         self.compbnd()
+
+# class log(Expr):
+#     def __init__(self, eother, base = math.e):
+#         self.x = eother.x
+#         self.value = math.log(eother.value, base)
+#         self.range = interval.log(eother.range, base)
+#         sp = interval.Interval([0, 0])
+#         if eother.value == eother.range[0] or eother.value == eother.range[1]:
+#             sp = self.range
+#         else:
+#             sp = compConvSlope(self.range, self.value, eother.range, eother.value)
+#         self.S = eother.S * sp
+#         self.compbnd()
+
 
 
 
@@ -153,14 +187,15 @@ if (__name__ == '__main__'):
 
     def f(x):
         # return sin(ident(x)) + sin(const(10 / 3, x) * ident(x))
-        return exp(ident(x)**2)
+        # return exp(ident(x)**2)
         # return  (ident(x) + sin(ident(x))) * exp(- (ident(x)**2))
         # return ident(x)**6 - const(15, x) * ident(x)**4 + const(27, x) * ident(x)**2 + const(250,x)
         # return ident(x)**4 - const(10, x) * ident(x)**3 + const(35, x) * ident(x)**2 - const(50, x) * ident(x) + const(24,x)
-        # return ident(x) * (ident(x)**2 - const(4, x) * ident(x) + const(2, x))
+        return exp(sin(ident(x)) * (ident(x)**2 - const(4, x) * ident(x) + const(2, x)))
         # return const(4, x) * ident(x)
     # x = [1,7]
     x = [0.75,1.75]
+    Expr.flagRecompRange = False
     ex1 = f(x)
     print(ex1)
     Expr.flagRecompRange = True

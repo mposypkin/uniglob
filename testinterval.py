@@ -50,6 +50,15 @@ class TestInterval(unittest.TestCase):
         for i in range(len(z.x)):
             self.assertAlmostEqual(z.x[i], [-0.5,1][i])
 
+    def testLog(self):
+        x = interval.Interval([0.5, 4])
+        z = interval.log(x, 2)
+        for i in range(len(z.x)):
+            self.assertAlmostEqual(z.x[i], [-1,2][i])
+        z = interval.log(x, 0.5)
+        for i in range(len(z.x)):
+            self.assertAlmostEqual(z.x[i], [-2,1][i])
+
 
 
 

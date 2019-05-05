@@ -98,6 +98,12 @@ def cos(x):
 def exp(x):
     return Interval([math.exp(x[0]), math.exp(x[1])])
 
+def log(x, base):
+    if base > 1:
+        return Interval([math.log(x[0], base), math.log(x[1], base)])
+    else:
+        return Interval([math.log(x[1], base), math.log(x[0], base)])
+
 
 if (__name__ == '__main__'):
 
