@@ -144,6 +144,28 @@ class sin(Expr):
         self.S = eother.S * sp
         self.compbnd()
 
+class cos(Expr):
+    def __init__(self, eother):
+        self.x = eother.x
+        self.value = math.cos(eother.value)
+        self.range = interval.cos(eother.range)
+        sp = interval.Interval([0, 0])
+        if eother.value == eother.range[0] or eother.value == eother.range[1]:
+            sp = - interval.sin(eother.range)
+        else:
+            pi05 = 0.5 * math.pi
+            pil = math.floor(math.floor(eother.range[0] + pi05/ math.pi))
+            piu = math.ceil(math.ceil(eother.range[1]  + pi05 / math.pi))
+            if piu == pil + 1:
+                if piu % 2 == 0:
+                    sp = compConcSlope(self.range, self.value, eother.range, eother.value)
+                else:
+                    sp = compConvSlope(self.range, self.value, eother.range, eother.value)
+            else:
+                sp = - interval.sin(eother.range)
+        self.S = eother.S * sp
+        self.compbnd()
+
 
 class exp(Expr):
     def __init__(self, eother):
@@ -186,23 +208,25 @@ if (__name__ == '__main__'):
     print(s)
 
     def f(x):
+        return  (x + sin(x)) * exp(-(x**2))
         # return sin(ident(x)) + sin(const(10 / 3, x) * ident(x))
         # return exp(ident(x)**2)
         # return  (ident(x) + sin(ident(x))) * exp(- (ident(x)**2))
+        # return  (ident(x) + cos(ident(x) - const(0.5 * math.pi, x))) * exp(- (ident(x)**2))
         # return ident(x)**6 - const(15, x) * ident(x)**4 + const(27, x) * ident(x)**2 + const(250,x)
         # return ident(x)**4 - const(10, x) * ident(x)**3 + const(35, x) * ident(x)**2 - const(50, x) * ident(x) + const(24,x)
-        return exp(sin(ident(x)) * (ident(x)**2 - const(4, x) * ident(x) + const(2, x)))
+        # return exp(sin(ident(x)) * (ident(x)**2 - const(4, x) * ident(x) + const(2, x)))
         # return const(4, x) * ident(x)
     # x = [1,7]
     x = [0.75,1.75]
     Expr.flagRecompRange = False
-    ex1 = f(x)
+    ex1 = f(ident(x))
     print(ex1)
-    Expr.flagRecompRange = True
-    ex1.compbnd()
-    print(ex1)
-    ex2 = f(x)
     # Expr.flagRecompRange = True
-    # ex.compbnd()
-    print(ex2)
+    # ex1.compbnd()
+    # print(ex1)
+    # ex2 = f(x)
+    # # Expr.flagRecompRange = True
+    # # ex.compbnd()
+    # print(ex2)
 
