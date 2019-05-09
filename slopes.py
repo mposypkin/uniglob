@@ -36,6 +36,7 @@ class Expr:
             fc = interval.Interval([self.value, self.value])
             bnd = fc + self.S * xc
             self.range.intersec(bnd)
+            return bnd
 
     def __repr__(self):
         return "value = " + str(self.value) + ", slope = " + str(self.S) + ", range = " + str(self.range) + ", x = " + str(self.x)
@@ -52,22 +53,43 @@ class Expr:
 
     def __add__(self, eother):
         nexpr = Expr()
-        nexpr.value = self.value + eother.value
-        nexpr.S = self.S + eother.S
+        etmp = makeConst(eother, self.x)
+        nexpr.value = self.value + etmp.value
+        nexpr.S = self.S + etmp.S
         nexpr.x = self.x
-        nexpr.range = self.range + eother.range
+        nexpr.range = self.range + etmp.range
         nexpr.compbnd()
         return nexpr
 
-    def __sub__(self, other):
+    def __radd__(self, eother):
         nexpr = Expr()
-        nexpr.value = self.value - other.value
-        nexpr.S = self.S - other.S
+        etmp = makeConst(eother, self.x)
+        nexpr.value = self.value + etmp.value
+        nexpr.S = self.S + etmp.S
         nexpr.x = self.x
-        nexpr.range = self.range - other.range
+        nexpr.range = self.range + etmp.range
         nexpr.compbnd()
         return nexpr
 
+    def __sub__(self, eother):
+        nexpr = Expr()
+        etmp = makeConst(eother, self.x)
+        nexpr.value = self.value - etmp.value
+        nexpr.S = self.S - etmp.S
+        nexpr.x = self.x
+        nexpr.range = self.range - etmp.range
+        nexpr.compbnd()
+        return nexpr
+
+    def __rsub__(self, eother):
+        nexpr = Expr()
+        etmp = makeConst(eother, self.x)
+        nexpr.value = etmp.value - self.value
+        nexpr.S = etmp.S - self.S
+        nexpr.x = self.x
+        nexpr.range = etmp.range - self.range
+        nexpr.compbnd()
+        return nexpr
 
     def __pow__(self, k):
         nexpr = Expr()
@@ -94,13 +116,33 @@ class Expr:
 
     def __mul__(self, eother):
         nexpr = Expr()
-        nexpr.value = self.value * eother.value
-        nexpr.range = self.range * eother.range
-        nexpr.S = self.range * eother.S + self.S * interval.Interval([eother.value, eother.value])
+        etmp = makeConst(eother, self.x)
+        nexpr.value = self.value * etmp.value
+        nexpr.range = self.range * etmp.range
+        nexpr.S = self.range * etmp.S + self.S * interval.Interval([etmp.value, etmp.value])
         nexpr.x = self.x
         nexpr.compbnd()
         return nexpr
 
+    def __rmul__(self, eother):
+        nexpr = Expr()
+        etmp = makeConst(eother, self.x)
+        nexpr.value = self.value * etmp.value
+        nexpr.range = self.range * etmp.range
+        nexpr.S = self.range * etmp.S + self.S * interval.Interval([etmp.value, etmp.value])
+        nexpr.x = self.x
+        nexpr.compbnd()
+        return nexpr
+
+
+def makeConst(expr, x):
+    if isinstance(expr, int):
+        etmp = const(expr, x)
+    elif isinstance(expr, float):
+        etmp = const(expr, x)
+    else:
+        etmp = expr
+    return etmp
 
     # def __call__(self, eother):
     #     nexpr = Expr()
@@ -198,35 +240,29 @@ class exp(Expr):
 
 # Check code
 if (__name__ == '__main__'):
-    x = [1,3]
-    s1 = const(42, x)
-    s2 = ident(x)
-    s3 = - s2
-    s = s1 + s3
-    print(s3)
-    print(s1)
-    print(s)
 
     def f(x):
-        return  (x + sin(x)) * exp(-(x**2))
-        # return sin(ident(x)) + sin(const(10 / 3, x) * ident(x))
-        # return exp(ident(x)**2)
-        # return  (ident(x) + sin(ident(x))) * exp(- (ident(x)**2))
+        # return  (x + sin(x)) * exp(-(x**2))
+        # return x**4 - 10 * x**3 + 35 * x**2 - 50 * x + 24
+        # return ln(x + 1.25) - 0.84 * x
+        # return  0.02 * x**2 - 0.03 * exp(- (20 * (x - 0.875))**2)
+        # return exp(x**2)
+        # return x**4 - 12 * x**3 + 47 * x**2 - 60 * x - 20 * exp(-x)
+        return x**6 - 15 * x**4 + 27 * x**2 + 250
+
         # return  (ident(x) + cos(ident(x) - const(0.5 * math.pi, x))) * exp(- (ident(x)**2))
-        # return ident(x)**6 - const(15, x) * ident(x)**4 + const(27, x) * ident(x)**2 + const(250,x)
-        # return ident(x)**4 - const(10, x) * ident(x)**3 + const(35, x) * ident(x)**2 - const(50, x) * ident(x) + const(24,x)
         # return exp(sin(ident(x)) * (ident(x)**2 - const(4, x) * ident(x) + const(2, x)))
         # return const(4, x) * ident(x)
+        # return sin(x) + sin(10 / 3 * x)
     # x = [1,7]
     x = [0.75,1.75]
     Expr.flagRecompRange = False
     ex1 = f(ident(x))
+    # ex1 = f(x)
     print(ex1)
-    # Expr.flagRecompRange = True
-    # ex1.compbnd()
-    # print(ex1)
-    # ex2 = f(x)
-    # # Expr.flagRecompRange = True
-    # # ex.compbnd()
-    # print(ex2)
+    Expr.flagRecompRange = True
+    print("bnd = ", ex1.compbnd())
+    print(ex1)
+    ex2 = f(ident(x))
+    print(ex2)
 
