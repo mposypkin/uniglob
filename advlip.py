@@ -12,11 +12,16 @@ class Expr:
     x = interval.Interval([0, 0])
     # The resulting range
     range = interval.Interval([-1, 0])
+    # If true then reeval range at every step
+    flagRecompRange = False
 
     def compbnd(self):
-        hl = 0.5 * (self.x[1] - self.x[0])
-        self.range[0] = self.value - self.L * hl
-        self.range[1] = self.value + self.L * hl
+        if Expr.flagRecompRange:
+            hl = 0.5 * (self.x[1] - self.x[0])
+            bnd = [self.value - self.L * hl, self.value + self.L * hl]
+            self.range.intersec(bnd)
+            return bnd
+
 
     def __str__(self):
         return "value = " + str(self.value) + ", Lip = " + str(self.L) + ", range = " + str(self.range) + ", x = " + str(self.x)

@@ -8,10 +8,10 @@ from slopes import *
 # xrange = [0, 10]
 
 def f(x):
-    return sin(ident(x)) + sin(const(10/3, x) * ident(x))
+    return sin(x) + sin(10/3 * x)
 
 xrange = interval.Interval([2.7, 7.5])
-f(xrange)
+
 # def f(x):
 #     return sin(ident(x))
 # xrange = interval.Interval([2.7, 7.5])
@@ -23,10 +23,11 @@ fr = 100000000
 eps = 1e-3
 maxsteps = 10000
 steps = 0
+# Expr.flagRecompRange = True
 while len(P) > 0 and steps <= maxsteps:
     steps = steps + 1
     x = P.pop(0)
-    e = f(x)
+    e = f(ident(x))
     print("Treat ", x)
     if e.value < fr:
         xr = 0.5 * (e.x[0] + e.x[1])
@@ -44,4 +45,4 @@ while len(P) > 0 and steps <= maxsteps:
 print("Steps performed: " + str(steps))
 print("Record: " + str(-fr) + " at " + str(xr))
 print("Hi")
-print("Check: " + str(f([xr, xr]).value))
+print("Check: " + str(f(ident([xr, xr])).value))

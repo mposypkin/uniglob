@@ -1,5 +1,6 @@
 import interval
 import math
+from enum import Flag, auto
 
 # Some auxilary functions
 
@@ -15,6 +16,12 @@ def compConcSlope(newRange, newValue, oldRange, oldValue):
     sp[0] = (newRange[1] - newValue) / (oldRange[1] - oldValue)
     return interval.Interval(sp)
 
+# Options
+class EvalOptions(Flag):
+    # Only interval evaluation is used
+    INTERVAL = auto()
+    # Only solpes evaluation is used
+    SLOPES = auto()
 
 # Generic class for expressions
 class Expr:
@@ -27,10 +34,10 @@ class Expr:
     # The Source Interval
     x = interval.Interval([0, 0])
     # If true then reeval range at every step
-    flagRecompRange = False
+    flagRecompRange = EvalOptions.INTERVAL
 
     def compbnd(self):
-        if Expr.flagRecompRange:
+        if Expr.flagRecompRange is EvalOptions.SLOPES:
             c = self.x.mid()
             xc = self.x - interval.Interval([c, c])
             fc = interval.Interval([self.value, self.value])
@@ -247,8 +254,8 @@ if (__name__ == '__main__'):
         # return ln(x + 1.25) - 0.84 * x
         # return  0.02 * x**2 - 0.03 * exp(- (20 * (x - 0.875))**2)
         # return exp(x**2)
-        # return x**4 - 12 * x**3 + 47 * x**2 - 60 * x - 20 * exp(-x)
-        return x**6 - 15 * x**4 + 27 * x**2 + 250
+        return x**4 - 12 * x**3 + 47 * x**2 - 60 * x - 20 * exp(-x)
+        # return x**6 - 15 * x**4 + 27 * x**2 + 250
 
         # return  (ident(x) + cos(ident(x) - const(0.5 * math.pi, x))) * exp(- (ident(x)**2))
         # return exp(sin(ident(x)) * (ident(x)**2 - const(4, x) * ident(x) + const(2, x)))
@@ -256,11 +263,11 @@ if (__name__ == '__main__'):
         # return sin(x) + sin(10 / 3 * x)
     # x = [1,7]
     x = [0.75,1.75]
-    Expr.flagRecompRange = False
+    # Expr.flagRecompRange = EvalOptions.SLOPES
     ex1 = f(ident(x))
     # ex1 = f(x)
     print(ex1)
-    Expr.flagRecompRange = True
+    Expr.flagRecompRange = EvalOptions.SLOPES
     print("bnd = ", ex1.compbnd())
     print(ex1)
     ex2 = f(ident(x))
