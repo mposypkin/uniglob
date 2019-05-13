@@ -127,3 +127,16 @@ if (__name__ == '__main__'):
     print(cos(Interval([0, math.pi / 2])))
     print(cos(Interval([- math.pi / 2, math.pi / 2])))
     print(cos(Interval([- 3 * math.pi / 2, - math.pi / 2])))
+
+    l1 = Interval([4, 4])
+    l2 = Interval([3, 3])
+
+    def f(x, a1, a2):
+        return x - l1 * cos(a1) - l2 * cos(a1 + a2)
+
+    Ix = Interval([0,1])
+    Ia1 = Interval([0, 0.25 * math.pi])
+    Ia2 = Interval([0, 0.5 * math.pi])
+
+    Ir = f(Ix, Ia1, Ia2)
+    print("Ir = ", Ir)
