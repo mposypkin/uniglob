@@ -1,7 +1,6 @@
 import math
 
 class Interval:
-    x = [0, 0]
 
     def __init__(self, x):
         self.x = x.copy()
@@ -16,7 +15,7 @@ class Interval:
         self.x[0] = max(self.x[0], other.x[0])
         self.x[1] = min(self.x[1], other.x[1])
         if self.x[0] > self.x[1]:
-            raise ValueError
+            raise ValueError(other.x[0], other.x[1], "results in wrong bounds:", self.x[0], self.x[1])
 
     def __getitem__(self, item):
         return self.x[item]
@@ -106,8 +105,6 @@ def log(x, base):
 
 
 if (__name__ == '__main__'):
-
-
     x = Interval([-1, 2])
     print(x)
     print(-x)

@@ -1,5 +1,6 @@
-import interval
+import sys
 import math
+import interval
 from enum import Flag, auto
 
 # Some auxilary functions
@@ -16,34 +17,28 @@ def compConcSlope(newRange, newValue, oldRange, oldValue):
     sp[0] = (newRange[1] - newValue) / (oldRange[1] - oldValue)
     return interval.Interval(sp)
 
-# Options
-class EvalOptions(Flag):
-    # Only interval evaluation is used
-    INTERVAL = auto()
-    # Only solpes evaluation is used
-    SLOPES = auto()
-
 # Generic class for expressions
 class Expr:
-    # The value in the middle of the interval
-    value = 0
-    # The Slope
-    S = interval.Interval([0, 0])
-    # The resulting range
-    range = interval.Interval([0, 0])
-    # The Source Interval
-    x = interval.Interval([0, 0])
-    # If true then reeval range at every step
-    flagRecompRange = EvalOptions.INTERVAL
 
-    def compbnd(self):
-        if Expr.flagRecompRange is EvalOptions.SLOPES:
-            c = self.x.mid()
-            xc = self.x - interval.Interval([c, c])
-            fc = interval.Interval([self.value, self.value])
-            bnd = fc + self.S * xc
-            self.range.intersec(bnd)
-            return bnd
+    def __init__(self):
+        # The value in the middle of the interval
+        self.value = 0
+        # The Slope
+        self.S = interval.Interval([-sys.float_info.max, sys.float_info.max])
+        # The resulting range
+        self.range = interval.Interval([-sys.float_info.max, sys.float_info.max])
+        # The Source Interval
+        self.x = interval.Interval([-sys.float_info.max, sys.float_info.max])
+        # If true then reeval range at every step
+        self.flagRecompRange = False
+
+    def compSlopesBound(self):
+        c = self.x.mid()
+        xc = self.x - interval.Interval([c, c])
+        fc = interval.Interval([self.value, self.value])
+        bnd = fc + self.S * xc
+        self.range.intersec(bnd)
+        return bnd
 
     def __repr__(self):
         return "value = " + str(self.value) + ", slope = " + str(self.S) + ", range = " + str(self.range) + ", x = " + str(self.x)
@@ -54,7 +49,8 @@ class Expr:
         nexpr.S = - self.S
         nexpr.x = self.x
         nexpr.range = - self.range
-        nexpr.compbnd()
+        if Expr.flagRecompRange:
+            nexpr.compSlopesBound()
         return nexpr
 
 
@@ -65,7 +61,8 @@ class Expr:
         nexpr.S = self.S + etmp.S
         nexpr.x = self.x
         nexpr.range = self.range + etmp.range
-        nexpr.compbnd()
+        if Expr.flagRecompRange:
+            nexpr.compSlopesBound()
         return nexpr
 
     def __radd__(self, eother):
@@ -75,7 +72,8 @@ class Expr:
         nexpr.S = self.S + etmp.S
         nexpr.x = self.x
         nexpr.range = self.range + etmp.range
-        nexpr.compbnd()
+        if Expr.flagRecompRange:
+            nexpr.compSlopesBound()
         return nexpr
 
     def __sub__(self, eother):
@@ -85,7 +83,8 @@ class Expr:
         nexpr.S = self.S - etmp.S
         nexpr.x = self.x
         nexpr.range = self.range - etmp.range
-        nexpr.compbnd()
+        if Expr.flagRecompRange:
+            nexpr.compSlopesBound()
         return nexpr
 
     def __rsub__(self, eother):
@@ -95,7 +94,30 @@ class Expr:
         nexpr.S = etmp.S - self.S
         nexpr.x = self.x
         nexpr.range = etmp.range - self.range
-        nexpr.compbnd()
+        if Expr.flagRecompRange:
+            nexpr.compSlopesBound()
+        return nexpr
+
+    def __mul__(self, eother):
+        nexpr = Expr()
+        etmp = makeConst(eother, self.x)
+        nexpr.value = self.value * etmp.value
+        nexpr.S = self.range * etmp.S + self.S * interval.Interval([etmp.value, etmp.value])
+        nexpr.x = self.x
+        nexpr.range = self.range * etmp.range
+        if Expr.flagRecompRange:
+            nexpr.compSlopesBound()
+        return nexpr
+
+    def __rmul__(self, eother):
+        nexpr = Expr()
+        etmp = makeConst(eother, self.x)
+        nexpr.value = self.value * etmp.value
+        nexpr.S = self.range * etmp.S + self.S * interval.Interval([etmp.value, etmp.value])
+        nexpr.x = self.x
+        nexpr.range = self.range * etmp.range
+        if Expr.flagRecompRange:
+            nexpr.compSlopesBound()
         return nexpr
 
     def __pow__(self, k):
@@ -118,27 +140,8 @@ class Expr:
             else:
                 sp = interval.Interval([k, k]) * (self.range ** (k - 1))
         nexpr.S = self.S * sp
-        nexpr.compbnd()
-        return nexpr
-
-    def __mul__(self, eother):
-        nexpr = Expr()
-        etmp = makeConst(eother, self.x)
-        nexpr.value = self.value * etmp.value
-        nexpr.range = self.range * etmp.range
-        nexpr.S = self.range * etmp.S + self.S * interval.Interval([etmp.value, etmp.value])
-        nexpr.x = self.x
-        nexpr.compbnd()
-        return nexpr
-
-    def __rmul__(self, eother):
-        nexpr = Expr()
-        etmp = makeConst(eother, self.x)
-        nexpr.value = self.value * etmp.value
-        nexpr.range = self.range * etmp.range
-        nexpr.S = self.range * etmp.S + self.S * interval.Interval([etmp.value, etmp.value])
-        nexpr.x = self.x
-        nexpr.compbnd()
+        if Expr.flagRecompRange:
+            nexpr.compSlopesBound()
         return nexpr
 
 
@@ -191,7 +194,8 @@ class sin(Expr):
             else:
                 sp = interval.cos(eother.range)
         self.S = eother.S * sp
-        self.compbnd()
+        if Expr.flagRecompRange:
+            self.compSlopesBound()
 
 class cos(Expr):
     def __init__(self, eother):
@@ -213,7 +217,8 @@ class cos(Expr):
             else:
                 sp = - interval.sin(eother.range)
         self.S = eother.S * sp
-        self.compbnd()
+        if EvalOptions.SLOPES in Expr.flagRecompRange:
+            self.compSlopesBound()
 
 
 class exp(Expr):
@@ -227,7 +232,8 @@ class exp(Expr):
         else:
             sp = compConvSlope(self.range, self.value, eother.range, eother.value)
         self.S = eother.S * sp
-        self.compbnd()
+        if Expr.flagRecompRange:
+            self.compSlopesBound()
 
 # class log(Expr):
 #     def __init__(self, eother, base = math.e):
@@ -240,7 +246,7 @@ class exp(Expr):
 #         else:
 #             sp = compConvSlope(self.range, self.value, eother.range, eother.value)
 #         self.S = eother.S * sp
-#         self.compbnd()
+#         self.compSlopesBound()
 
 
 
@@ -263,12 +269,11 @@ if (__name__ == '__main__'):
         # return sin(x) + sin(10 / 3 * x)
     # x = [1,7]
     x = [0.75,1.75]
-    # Expr.flagRecompRange = EvalOptions.SLOPES
+    Expr.flagRecompRange = False
     ex1 = f(ident(x))
-    # ex1 = f(x)
     print(ex1)
-    Expr.flagRecompRange = EvalOptions.SLOPES
-    print("bnd = ", ex1.compbnd())
+    Expr.flagRecompRange = True
+    print("bnd = ", ex1.compSlopesBound())
     print(ex1)
     ex2 = f(ident(x))
     print(ex2)
