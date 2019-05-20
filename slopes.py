@@ -20,6 +20,9 @@ def compConcSlope(newRange, newValue, oldRange, oldValue):
 # Generic class for expressions
 class Expr:
 
+    # If true then reeval range at every step
+    flagRecompRange = False
+
     def __init__(self):
         # The value in the middle of the interval
         self.value = 0
@@ -29,8 +32,6 @@ class Expr:
         self.range = interval.Interval([-sys.float_info.max, sys.float_info.max])
         # The Source Interval
         self.x = interval.Interval([-sys.float_info.max, sys.float_info.max])
-        # If true then reeval range at every step
-        self.flagRecompRange = False
 
     def compSlopesBound(self):
         c = self.x.mid()
