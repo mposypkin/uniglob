@@ -18,20 +18,30 @@ def compConcSlope(newRange, newValue, oldRange, oldValue):
     return interval.Interval(sp)
 
 # Generic class for expressions
-class Expr:
+class Slope:
 
     # If true then reeval range at every step
     flagRecompRange = False
 
-    def __init__(self):
+    # def __init__(self):
+    #     # The value in the middle of the interval
+    #     self.value = 0
+    #     # The Slope
+    #     self.S = interval.Interval([-sys.float_info.max, sys.float_info.max])
+    #     # The resulting range
+    #     self.range = interval.Interval([-sys.float_info.max, sys.float_info.max])
+    #     # The Source Interval
+    #     self.x = interval.Interval([-sys.float_info.max, sys.float_info.max])
+
+    def __init__(self, x):
         # The value in the middle of the interval
-        self.value = 0
+        self.value = 0.5 * (x[0] + x[1])
         # The Slope
-        self.S = interval.Interval([-sys.float_info.max, sys.float_info.max])
-        # The resulting range
-        self.range = interval.Interval([-sys.float_info.max, sys.float_info.max])
+        self.S = interval.Interval([1,1])
         # The Source Interval
-        self.x = interval.Interval([-sys.float_info.max, sys.float_info.max])
+        self.x = interval.Interval([x[0], x[1]])
+        # The resulting range
+        self.range = interval.Interval([x[0], x[1]])
 
     def compSlopesBound(self):
         c = self.x.mid()
@@ -45,86 +55,62 @@ class Expr:
         return "value = " + str(self.value) + ", slope = " + str(self.S) + ", range = " + str(self.range) + ", x = " + str(self.x)
 
     def __neg__(self):
-        nexpr = Expr()
+        nexpr = Slope(self.x)
         nexpr.value = - self.value
         nexpr.S = - self.S
         nexpr.x = self.x
         nexpr.range = - self.range
-        if Expr.flagRecompRange:
+        if Slope.flagRecompRange:
             nexpr.compSlopesBound()
         return nexpr
 
 
     def __add__(self, eother):
-        nexpr = Expr()
-        etmp = makeConst(eother, self.x)
+        nexpr = Slope(self.x)
+        etmp = valueToSlope(eother, self.x)
         nexpr.value = self.value + etmp.value
         nexpr.S = self.S + etmp.S
         nexpr.x = self.x
         nexpr.range = self.range + etmp.range
-        if Expr.flagRecompRange:
+        if Slope.flagRecompRange:
             nexpr.compSlopesBound()
         return nexpr
 
     def __radd__(self, eother):
-        nexpr = Expr()
-        etmp = makeConst(eother, self.x)
-        nexpr.value = self.value + etmp.value
-        nexpr.S = self.S + etmp.S
-        nexpr.x = self.x
-        nexpr.range = self.range + etmp.range
-        if Expr.flagRecompRange:
-            nexpr.compSlopesBound()
-        return nexpr
+        return self.__add__(eother)
 
     def __sub__(self, eother):
-        nexpr = Expr()
-        etmp = makeConst(eother, self.x)
+        nexpr = Slope(self.x)
+        etmp = valueToSlope(eother, self.x)
         nexpr.value = self.value - etmp.value
         nexpr.S = self.S - etmp.S
         nexpr.x = self.x
         nexpr.range = self.range - etmp.range
-        if Expr.flagRecompRange:
+        if Slope.flagRecompRange:
             nexpr.compSlopesBound()
         return nexpr
 
     def __rsub__(self, eother):
-        nexpr = Expr()
-        etmp = makeConst(eother, self.x)
-        nexpr.value = etmp.value - self.value
-        nexpr.S = etmp.S - self.S
-        nexpr.x = self.x
-        nexpr.range = etmp.range - self.range
-        if Expr.flagRecompRange:
-            nexpr.compSlopesBound()
-        return nexpr
+        etmp = valueToSlope(eother, self.x)
+        return etmp.__sub__(self)
 
     def __mul__(self, eother):
-        nexpr = Expr()
-        etmp = makeConst(eother, self.x)
+        nexpr = Slope(self.x)
+        etmp = valueToSlope(eother, self.x)
         nexpr.value = self.value * etmp.value
         nexpr.S = self.range * etmp.S + self.S * interval.Interval([etmp.value, etmp.value])
         nexpr.x = self.x
         nexpr.range = self.range * etmp.range
-        if Expr.flagRecompRange:
+        if Slope.flagRecompRange:
             nexpr.compSlopesBound()
         return nexpr
 
     def __rmul__(self, eother):
-        nexpr = Expr()
-        etmp = makeConst(eother, self.x)
-        nexpr.value = self.value * etmp.value
-        nexpr.S = self.range * etmp.S + self.S * interval.Interval([etmp.value, etmp.value])
-        nexpr.x = self.x
-        nexpr.range = self.range * etmp.range
-        if Expr.flagRecompRange:
-            nexpr.compSlopesBound()
-        return nexpr
+        return self.__mul__(eother)
 
     def __pow__(self, k):
-        nexpr = Expr()
+        nexpr = Slope(self.x)
         nexpr.value = self.value ** k
-        nexpr.x = self.x
         nexpr.range = self.range ** k
         sp = interval.Interval([0,0])
         if self.value == self.range[0] or self.value == self.range[1]:
@@ -141,12 +127,12 @@ class Expr:
             else:
                 sp = interval.Interval([k, k]) * (self.range ** (k - 1))
         nexpr.S = self.S * sp
-        if Expr.flagRecompRange:
+        if Slope.flagRecompRange:
             nexpr.compSlopesBound()
         return nexpr
 
 
-def makeConst(expr, x):
+def valueToSlope(expr, x):
     if isinstance(expr, int):
         etmp = const(expr, x)
     elif isinstance(expr, float):
@@ -160,7 +146,7 @@ def makeConst(expr, x):
     #     return nexpr
 
 # Constant expression
-class const(Expr):
+class const(Slope):
     def __init__(self, value, x):
         self.value = value
         self.S = interval.Interval([0,0])
@@ -168,15 +154,15 @@ class const(Expr):
         self.range = interval.Interval([value, value])
 
 # Literal
-class ident(Expr):
-    def __init__(self, x):
-        self.value = 0.5 * (x[0] + x[1])
-        self.S = interval.Interval([1,1])
-        self.x = interval.Interval([x[0], x[1]])
-        self.range = interval.Interval([x[0], x[1]])
+# class ident(Slope):
+#     def __init__(self, x):
+#         self.value = 0.5 * (x[0] + x[1])
+#         self.S = interval.Interval([1,1])
+#         self.x = interval.Interval([x[0], x[1]])
+#         self.range = interval.Interval([x[0], x[1]])
 
 
-class sin(Expr):
+class sin(Slope):
     def __init__(self, eother):
         self.x = eother.x
         self.value = math.sin(eother.value)
@@ -195,10 +181,10 @@ class sin(Expr):
             else:
                 sp = interval.cos(eother.range)
         self.S = eother.S * sp
-        if Expr.flagRecompRange:
+        if Slope.flagRecompRange:
             self.compSlopesBound()
 
-class cos(Expr):
+class cos(Slope):
     def __init__(self, eother):
         self.x = eother.x
         self.value = math.cos(eother.value)
@@ -218,11 +204,11 @@ class cos(Expr):
             else:
                 sp = - interval.sin(eother.range)
         self.S = eother.S * sp
-        if EvalOptions.SLOPES in Expr.flagRecompRange:
+        if EvalOptions.SLOPES in Slope.flagRecompRange:
             self.compSlopesBound()
 
 
-class exp(Expr):
+class exp(Slope):
     def __init__(self, eother):
         self.x = eother.x
         self.value = math.exp(eother.value)
@@ -233,7 +219,7 @@ class exp(Expr):
         else:
             sp = compConvSlope(self.range, self.value, eother.range, eother.value)
         self.S = eother.S * sp
-        if Expr.flagRecompRange:
+        if Slope.flagRecompRange:
             self.compSlopesBound()
 
 # class log(Expr):
@@ -270,12 +256,17 @@ if (__name__ == '__main__'):
         # return sin(x) + sin(10 / 3 * x)
     # x = [1,7]
     x = [0.75,1.75]
-    Expr.flagRecompRange = False
-    ex1 = f(ident(x))
+    Slope.flagRecompRange = False
+    s = Slope(x)
+    print(s)
+    ex = 4 * s
+    ex10 = s**2
+    print(ex10)
+    ex1 = f(s)
     print(ex1)
-    Expr.flagRecompRange = True
+    Slope.flagRecompRange = True
     print("bnd = ", ex1.compSlopesBound())
     print(ex1)
-    ex2 = f(ident(x))
+    ex2 = f(Slope(x))
     print(ex2)
 
