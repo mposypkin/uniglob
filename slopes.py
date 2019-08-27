@@ -19,19 +19,13 @@ def compConcSlope(newRange, newValue, oldRange, oldValue):
 
 # Generic class for expressions
 class Slope:
+    """
+    A class for slopes
 
+
+    """
     # If true then reeval range at every step
     flagRecompRange = False
-
-    # def __init__(self):
-    #     # The value in the middle of the interval
-    #     self.value = 0
-    #     # The Slope
-    #     self.S = interval.Interval([-sys.float_info.max, sys.float_info.max])
-    #     # The resulting range
-    #     self.range = interval.Interval([-sys.float_info.max, sys.float_info.max])
-    #     # The Source Interval
-    #     self.x = interval.Interval([-sys.float_info.max, sys.float_info.max])
 
     def __init__(self, x):
         # The value in the middle of the interval
@@ -44,6 +38,11 @@ class Slope:
         self.range = interval.Interval([x[0], x[1]])
 
     def compSlopesBound(self):
+        """
+        Evaluates the slopes bound
+        :return:
+        the computed slopes bound
+        """
         c = self.x.mid()
         xc = self.x - interval.Interval([c, c])
         fc = interval.Interval([self.value, self.value])
@@ -98,7 +97,7 @@ class Slope:
         nexpr = Slope(self.x)
         etmp = valueToSlope(eother, self.x)
         nexpr.value = self.value * etmp.value
-        nexpr.S = self.range * etmp.S + self.S * interval.Interval([etmp.value, etmp.value])
+        nexpr.S = self.range * etmp.S + self.S * etmp.range
         nexpr.x = self.x
         nexpr.range = self.range * etmp.range
         if Slope.flagRecompRange:
@@ -112,7 +111,6 @@ class Slope:
         nexpr = Slope(self.x)
         nexpr.value = self.value ** k
         nexpr.range = self.range ** k
-        sp = interval.Interval([0,0])
         if self.value == self.range[0] or self.value == self.range[1]:
             sp = interval.Interval([k, k]) * (self.range ** (k - 1))
         elif k == 2:
@@ -204,7 +202,7 @@ class cos(Slope):
             else:
                 sp = - interval.sin(eother.range)
         self.S = eother.S * sp
-        if EvalOptions.SLOPES in Slope.flagRecompRange:
+        if Slope.flagRecompRange:
             self.compSlopesBound()
 
 
@@ -241,32 +239,29 @@ class exp(Slope):
 # Check code
 if (__name__ == '__main__'):
 
+    # help(Slope)
     def f(x):
+        return x**2 - 4 * x + 2
         # return  (x + sin(x)) * exp(-(x**2))
         # return x**4 - 10 * x**3 + 35 * x**2 - 50 * x + 24
         # return ln(x + 1.25) - 0.84 * x
         # return  0.02 * x**2 - 0.03 * exp(- (20 * (x - 0.875))**2)
         # return exp(x**2)
-        return x**4 - 12 * x**3 + 47 * x**2 - 60 * x - 20 * exp(-x)
+        # return x**4 - 12 * x**3 + 47 * x**2 - 60 * x - 20 * exp(-x)
         # return x**6 - 15 * x**4 + 27 * x**2 + 250
 
         # return  (ident(x) + cos(ident(x) - const(0.5 * math.pi, x))) * exp(- (ident(x)**2))
         # return exp(sin(ident(x)) * (ident(x)**2 - const(4, x) * ident(x) + const(2, x)))
         # return const(4, x) * ident(x)
         # return sin(x) + sin(10 / 3 * x)
-    # x = [1,7]
-    x = [0.75,1.75]
+    x = [1,7]
+    # x = [0.75,1.75]
     Slope.flagRecompRange = False
     s = Slope(x)
-    print(s)
-    ex = 4 * s
-    ex10 = s**2
-    print(ex10)
     ex1 = f(s)
-    print(ex1)
     Slope.flagRecompRange = True
+    print("Slope = ", ex1)
     print("bnd = ", ex1.compSlopesBound())
-    print(ex1)
     ex2 = f(Slope(x))
     print(ex2)
 
