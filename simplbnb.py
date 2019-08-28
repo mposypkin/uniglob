@@ -1,15 +1,18 @@
 # from lipexpr import *
 import interval
 # from advlip import *
-from slopes import *
+import slopes as slp
+import numpy as np
+import sympy as smp
 
 # def f(x):
 #     return -(ident(x) * sin(ident(x)))
 # xrange = [0, 10]
 
-def f(x):
-    return sin(x) + sin(10/3 * x)
-
+x = smp.symbols('x')
+fexpr = smp.sin(x) + smp.sin(10/3 * x)
+f = smp.lambdify(x, fexpr)
+fslp =  smp.lambdify(x, fexpr, slp)
 xrange = interval.Interval([2.7, 7.5])
 
 # def f(x):
@@ -27,7 +30,7 @@ steps = 0
 while len(P) > 0 and steps <= maxsteps:
     steps = steps + 1
     x = P.pop(0)
-    e = f(ident(x))
+    e = fslp(slp.Slope(x))
     print("Treat ", x)
     if e.value < fr:
         xr = 0.5 * (e.x[0] + e.x[1])
@@ -45,4 +48,5 @@ while len(P) > 0 and steps <= maxsteps:
 print("Steps performed: " + str(steps))
 print("Record: " + str(-fr) + " at " + str(xr))
 print("Hi")
-print("Check: " + str(f(ident([xr, xr])).value))
+print("Check: " + str(f(xr)))
+print("By")
