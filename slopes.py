@@ -27,15 +27,19 @@ class Slope:
     # If true then reeval range at every step
     flagRecompRange = False
 
-    def __init__(self, x):
-        # The value in the middle of the interval
-        self.value = 0.5 * (x[0] + x[1])
+    def __init__(self, x, val = None):
+        # The value at some point of the interval
+        if val == None:
+            self.value = 0.5 * (x[0] + x[1])
+        else:
+            self.value = val
         # The Slope
         self.S = interval.Interval([1,1])
         # The Source Interval
         self.x = interval.Interval([x[0], x[1]])
         # The resulting range
         self.range = interval.Interval([x[0], x[1]])
+
 
     def compSlopesBound(self):
         """
