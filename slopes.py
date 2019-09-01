@@ -5,16 +5,16 @@ from enum import Flag, auto
 
 # Some auxilary functions
 
-def compConvSlope(newRange, newValue, oldRange, oldValue):
+def compConvSlope(a, b, c, va, vb, vc):
     sp = [0, 0]
-    sp[0] = (newRange[0] - newValue) / (oldRange[0] - oldValue)
-    sp[1] = (newRange[1] - newValue) / (oldRange[1] - oldValue)
+    sp[0] = (va - vc) / (a - c)
+    sp[1] = (vb - vc) / (b - c)
     return interval.Interval(sp)
 
-def compConcSlope(newRange, newValue, oldRange, oldValue):
+def compConcSlope(a, b, c, va, vb, vc):
     sp = [0, 0]
-    sp[1] = (newRange[0] - newValue) / (oldRange[0] - oldValue)
-    sp[0] = (newRange[1] - newValue) / (oldRange[1] - oldValue)
+    sp[1] = (va - vc) / (a - c)
+    sp[0] = (vb - vc) / (b - c)
     return interval.Interval(sp)
 
 # Generic class for expressions
@@ -177,9 +177,11 @@ class sin(Slope):
             piu = math.ceil(math.ceil(eother.range[1] / math.pi))
             if piu == pil + 1:
                 if piu % 2 == 0:
-                    sp = compConcSlope(self.range, self.value, eother.range, eother.value)
+                    sp = compConcSlope(eother.range[0], eother.range[1], eother.value,
+                                       math.sin(eother.range[0]), math.sin(eother.range[1]), self.value )
                 else:
-                    sp = compConvSlope(self.range, self.value, eother.range, eother.value)
+                    sp = compConcSlope(eother.range[0], eother.range[1], eother.value,
+                                       math.sin(eother.range[0]), math.sin(eother.range[1]), self.value )
             else:
                 sp = interval.cos(eother.range)
         self.S = eother.S * sp

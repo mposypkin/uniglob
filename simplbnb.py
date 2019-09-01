@@ -7,28 +7,52 @@ import sympy as smp
 
 
 class Problem:
+    """
+    A class for defining a problem
+    """
     def __init__(self, name, range, xvar, fexpr):
+        """
+        Constructor
+        :param name: name of the problem
+        :param range: range of the variable
+        :param xvar: symbol of a variable
+        :param fexpr: objective expression
+        """
         self.name = name
         self.range = range
         self.fexpr = fexpr
         self.xvar = xvar
+
     def __repr__(self):
         return "[" + self.name + "] min " + str(self.fexpr) + " on " + str(self.range)
 
 class SolutionInfo:
-    def __init__(self, value, x, steps):
+    """
+    A class for storing solution information
+    """
+    def __init__(self, value, x):
+        """
+        Constructor
+        :param value: value of the solution
+        :param x: vector
+        """
         self.value = value
         self.x = x
-        self.steps = steps
 
     def __repr__(self):
-        return str(self.value) + "  = f(" + str(self.x) + ") obtained in " + str(self.steps) + " steps"
+        return str(self.value) + "  = f(" + str(self.x) + ")"
 
-def simpleBnB(problem, eps, solinfo):
+def simple_bnb(problem, eps, solinfo, maxsteps):
+    """
+    A standard slope based BnB solver
+    :param problem: problem to solve
+    :param eps: tolerance
+    :param solinfo: information for the solution
+    :return: number of steps actually done
+    """
     P = []
     P.append(interval.Interval(problem.range))
     fr = solinfo.value
-    maxsteps = solinfo.steps
     steps = 0
     f = smp.lambdify(problem.xvar, problem.fexpr)
     fslp = smp.lambdify(problem.xvar, problem.fexpr, slp)
@@ -53,18 +77,35 @@ def simpleBnB(problem, eps, solinfo):
             P.append(x2)
     solinfo.value = fr
     solinfo.x = xr
-    solinfo.steps = steps
+    return steps
 
-def pijavBnB(problem, eps, solinfo):
+def pijavBnB(problem, eps, solinfo, maxsteps):
+    """
+    Pijavsky method enhanced with slopes
+    :param problem: problem to solver
+    :param eps: tolerance
+    :param solinfo: obtained solution
+    :return: actual steps performed
+    """
     class Sub:
         def __init__(self, s1, s2, ival):
             self.s1 = s1
             self.s2 = s2
             self.ival = ival
-            self.c = (self.s1.value - self.s2.value + self.ival[1] * self.s2.S[1] - self.ival[0] * self.s1.S[0])/(self.s2.S[1] - self.s1.S[0])
-            self.bound = self.s1.value + (self.c - self.ival[0]) * self.s1.S[0]
-            boundcheck = self.s2.value + (self.c - self.ival[1]) * self.s2.S[1]
-            print("bound = ", self.bound, ", check ", boundcheck)
+            a = ival[0]
+            b = ival[1]
+            La = s1.S[0]
+            Lb = s2.S[1]
+            va = s1.value
+            vb = s2.value
+            self.c = (vb - va + La * a - Lb * b)/(La - Lb)
+            self.bound = va + La * (self.c - a)
+            boundcheck = vb + Lb * (self.c - b)
+            if abs(self.bound - boundcheck) > 0.01:
+                print("bound = ", self.bound, ", check ", boundcheck)
+                print("a = ", a, ", b = ", b, ", va = ", va, ", vb = ", vb, ", La = ", La, ", Lb = ", Lb)
+                print("s1 = ", s1)
+                print("s2 = ", s2)
 
         def bnd(self):
             return self.bound
@@ -74,7 +115,6 @@ def pijavBnB(problem, eps, solinfo):
                     + "c =" + str(self.c) + ", bound = " + str(self.bound)
 
 
-    print("Hi")
     f = smp.lambdify(problem.xvar, problem.fexpr)
     fslp = smp.lambdify(problem.xvar, problem.fexpr, slp)
     P = []
@@ -85,7 +125,6 @@ def pijavBnB(problem, eps, solinfo):
     print(P)
     # return
     fr = solinfo.value
-    maxsteps = solinfo.steps
     steps = 0
 
     # Expr.flagRecompRange = True
@@ -98,6 +137,7 @@ def pijavBnB(problem, eps, solinfo):
             x2 = interval.Interval([sub.c, sub.ival[1]])
             # print("Add ", x2)
             ns = fslp(slp.Slope(sub.ival, sub.c))
+            # print("at ", sub.c, " ns = ", ns)
             if ns.value < fr:
                 fr = ns.value
                 xr = sub.c
@@ -105,17 +145,30 @@ def pijavBnB(problem, eps, solinfo):
             P.append(Sub(ns, sub.s2, x2))
     solinfo.value = fr
     solinfo.x = xr
-    solinfo.steps = steps
+    return steps
 
 
+def check_slope(problem, c, ival):
+    fslp = smp.lambdify(problem.xvar, problem.fexpr, slp)
+    ns = fslp(slp.Slope(ival, c))
+    print("slope = ", ns)
+
+
+#=============
+MAX_STEPS = 10000
 x = smp.symbols('x')
 fexpr = smp.sin(x) + smp.sin(10/3 * x)
+# fexpr = smp.sin(2 * x)
+
 problem = Problem("problem1", [2.7, 7.5], x, fexpr)
 
-solinfo = SolutionInfo(10000000, 0, 10000)
-simpleBnB(problem, 1e-3, solinfo)
-print("For a problem ", problem, ", found solution ", solinfo)
+# check_slope(problem, 5.013243513478913, interval.Interval([4.891846041674883, 5.013243513478914]))
+# exit(0)
 
-solinfo = SolutionInfo(10000000, 0, 10000)
-pijavBnB(problem, 1e-3, solinfo)
-print("For a problem ", problem, ", found solution ", solinfo)
+solinfo = SolutionInfo(10000000, 0)
+steps = simple_bnb(problem, 1e-3, solinfo, MAX_STEPS)
+print("For a problem ", problem, ", found solution ", solinfo, " in ", steps, " steps.")
+
+solinfo = SolutionInfo(10000000, 0)
+steps = pijavBnB(problem, 1e-3, solinfo, MAX_STEPS)
+print("For a problem ", problem, ", found solution ", solinfo, " in ", steps, " steps.")
