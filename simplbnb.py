@@ -62,17 +62,13 @@ def simple_bnb(problem, eps, solinfo, maxsteps):
         steps = steps + 1
         x = P.pop(0)
         e = fslp(slp.Slope(x))
-        print("Treat ", x)
         if e.value < fr:
             xr = 0.5 * (e.x[0] + e.x[1])
             fr = e.value
-            print("e: <", e, ">\n")
         if fr - e.range[0] > eps:
             m = 0.5 * (x[0] + x[1])
             x1 = interval.Interval([x[0], m])
-            print("Add ", x1)
             x2 = interval.Interval([m, x[1]])
-            print("Add ", x2)
             P.append(x1)
             P.append(x2)
     solinfo.value = fr
@@ -122,8 +118,6 @@ def pijavBnB(problem, eps, solinfo, maxsteps):
     s1 = fslp(slp.Slope(ival, ival[0]))
     s2 = fslp(slp.Slope(ival, ival[1]))
     P.append(Sub(s1, s2, ival))
-    print(P)
-    # return
     fr = solinfo.value
     steps = 0
 
@@ -157,10 +151,12 @@ def check_slope(problem, c, ival):
 #=============
 MAX_STEPS = 10000
 x = smp.symbols('x')
-fexpr = smp.sin(x) + smp.sin(10/3 * x)
+# fexpr = smp.sin(x) + smp.sin(10/3 * x)
 # fexpr = smp.sin(2 * x)
+fexpr = smp.cos(10*x) * (smp.log(x + 1.25) - 0.84 * x)**2
 
-problem = Problem("problem1", [2.7, 7.5], x, fexpr)
+# problem = Problem("problem1", [2.7, 7.5], x, fexpr)
+problem = Problem("problem2", [0.75, 1.75], x, fexpr)
 
 # check_slope(problem, 5.013243513478913, interval.Interval([4.891846041674883, 5.013243513478914]))
 # exit(0)
