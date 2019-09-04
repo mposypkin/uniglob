@@ -4,6 +4,7 @@ import interval
 import slopes as slp
 import numpy as np
 import sympy as smp
+import time
 
 
 class Problem:
@@ -75,7 +76,7 @@ def simple_bnb(problem, eps, solinfo, maxsteps):
     solinfo.x = xr
     return steps
 
-def pijavBnB(problem, eps, solinfo, maxsteps):
+def pijav_bnb(problem, eps, solinfo, maxsteps):
     """
     Pijavsky method enhanced with slopes
     :param problem: problem to solver
@@ -127,16 +128,22 @@ def pijavBnB(problem, eps, solinfo, maxsteps):
         sub = P.pop(0)
         if fr - sub.bnd() > eps:
             x1 = interval.Interval([sub.ival[0], sub.c])
-            # print("Add ", x1)
             x2 = interval.Interval([sub.c, sub.ival[1]])
-            # print("Add ", x2)
-            ns = fslp(slp.Slope(sub.ival, sub.c))
+
+            # ns = fslp(slp.Slope(sub.ival, sub.c))
+            # ns1 = ns
+            # ns2 = ns
+
+            ns1 = fslp(slp.Slope(x1, sub.c))
+            ns2 = fslp(slp.Slope(x2, sub.c))
+
+
             # print("at ", sub.c, " ns = ", ns)
-            if ns.value < fr:
-                fr = ns.value
+            if ns1.value < fr:
+                fr = ns1.value
                 xr = sub.c
-            P.append(Sub(sub.s1, ns, x1))
-            P.append(Sub(ns, sub.s2, x2))
+            P.append(Sub(sub.s1, ns1, x1))
+            P.append(Sub(ns2, sub.s2, x2))
     solinfo.value = fr
     solinfo.x = xr
     return steps
@@ -147,13 +154,22 @@ def check_slope(problem, c, ival):
     ns = fslp(slp.Slope(ival, c))
     print("slope = ", ns)
 
+def eval_method(method, problem):
+    tb = time.time()
+    MAX_ITERS = 100
+    for i in range(1,MAX_ITERS):
+        solinfo = SolutionInfo(10000000, 0)
+        steps = method(problem, 1e-3, solinfo, MAX_STEPS)
+    te = time.time()
+    print("For a problem ", problem, ", found solution ", solinfo, " in ", steps, " steps and ", te - tb, " seconds.")
+
 
 #=============
 MAX_STEPS = 10000
 x = smp.symbols('x')
-# fexpr = smp.sin(x) + smp.sin(10/3 * x)
+fexpr = smp.sin(x) + smp.sin(10/3 * x)
 # fexpr = smp.sin(2 * x)
-fexpr = smp.cos(10*x) * (smp.log(x + 1.25) - 0.84 * x)**2
+# fexpr = smp.cos(10*x) * (smp.log(x + 1.25) - 0.84 * x)**2
 
 # problem = Problem("problem1", [2.7, 7.5], x, fexpr)
 problem = Problem("problem2", [0.75, 1.75], x, fexpr)
@@ -161,10 +177,7 @@ problem = Problem("problem2", [0.75, 1.75], x, fexpr)
 # check_slope(problem, 5.013243513478913, interval.Interval([4.891846041674883, 5.013243513478914]))
 # exit(0)
 
-solinfo = SolutionInfo(10000000, 0)
-steps = simple_bnb(problem, 1e-3, solinfo, MAX_STEPS)
-print("For a problem ", problem, ", found solution ", solinfo, " in ", steps, " steps.")
 
-solinfo = SolutionInfo(10000000, 0)
-steps = pijavBnB(problem, 1e-3, solinfo, MAX_STEPS)
-print("For a problem ", problem, ", found solution ", solinfo, " in ", steps, " steps.")
+
+eval_method(simple_bnb, problem)
+eval_method(pijav_bnb, problem)
