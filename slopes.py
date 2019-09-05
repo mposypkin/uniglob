@@ -30,7 +30,7 @@ def comp_conv_slope(a, b, c, va, vb, vc, dc):
 
 def comp_conc_slope(a, b, c, va, vb, vc, dc):
     """
-    Computes the slope for a cocave function
+    Computes the slope for a concave function
     :param a: left bound of the interval
     :param b: right bound of the interval
     :param c: point in the interval
@@ -59,6 +59,9 @@ class Slope:
     # If true then reeval range at every step
     flagRecompRange = False
 
+    # If true then account convexity/concavity
+    flagEvalConv = False
+
     def __init__(self, x, val = None):
         """
         The constructor
@@ -75,10 +78,17 @@ class Slope:
         self.x = interval.Interval([x[0], x[1]])
         # The resulting range
         self.range = interval.Interval([x[0], x[1]])
-        # The convexity flag
-        self.conv = True
-        # The concavity flag
-        self.conc = True
+        if Slope.flagEvalConv:
+            # The convexity flag
+            self.conv = True
+            # The concavity flag
+            self.conc = True
+            # Value at the left end
+            self.va = x[0]
+            # Value at the right end
+            self.vb = x[1]
+            # The point within the interval
+            self.c = self.value
 
 
     def comp_slopes_bound(self):
@@ -94,9 +104,26 @@ class Slope:
         self.range.intersec(bnd)
         return bnd
 
+    def comp_conv_slopes(self):
+        """
+        For convex/concave functions return
+        :return:
+        """
+        if self.conv:
+            s = comp_conv_slope(self.x[0], self.x[1], self.c, self.va, self.vb, self.value, 0)
+        elif self.conc:
+            s = comp_conc_slope(self.x[0], self.x[1], self.c, self.va, self.vb, self.value, 0)
+        print("s = ", s, "self.S = ", self.S)
+        self.S.intersec(s)
+
     def __repr__(self):
-        return "value = " + str(self.value) + ", slope = " + str(self.S) + ", range = " + str(self.range) \
-               + ", x = " + str(self.x) + ", conv = " + str(self.conv) + ", conc = " + str(self.conc)
+        if Slope.flagEvalConv:
+            return "value = " + str(self.value) + ", slope = " + str(self.S) + ", range = " + str(self.range) \
+                   + ", x = " + str(self.x) + ", conv = " + str(self.conv) + ", conc = " + str(self.conc) \
+                   + ", va = " + str(self.va) + ", vb = " + str(self.vb) + ", c = " + str(self.c)
+        else:
+            return "value = " + str(self.value) + ", slope = " + str(self.S) + ", range = " + str(self.range) \
+                   + ", x = " + str(self.x)
 
     def __neg__(self):
         nexpr = Slope(self.x)
@@ -104,13 +131,14 @@ class Slope:
         nexpr.S = - self.S
         nexpr.x = self.x
         nexpr.range = - self.range
-        if not (nexpr.conc and nexpr.conv):
-            if self.conv:
-                nexpr.conc = True
-                nexpr.conv = False
-            elif nexpr.conc:
-                self.conv = True
-                nexpr.conc = False
+        if Slope.flagEvalConv:
+            if not (nexpr.conc and nexpr.conv):
+                if self.conv:
+                    nexpr.conc = True
+                    nexpr.conv = False
+                elif nexpr.conc:
+                    self.conv = True
+                    nexpr.conc = False
         if Slope.flagRecompRange:
             nexpr.comp_slopes_bound()
         return nexpr
@@ -123,13 +151,17 @@ class Slope:
         nexpr.S = self.S + etmp.S
         nexpr.x = self.x
         nexpr.range = self.range + etmp.range
-        if self.conv and etmp.conv:
-            nexpr.conv = True
-        elif self.conc and etmp.conc:
-            nexpr.conc = True
-        else:
-            nexpr.conv = False
-            nexpr.conc = False
+        if Slope.flagEvalConv:
+            nexpr.va = self.va + eother.va
+            nexpr.vb = self.vb + eother.vb
+            nexpr.c = self.c
+            if self.conv and etmp.conv:
+                nexpr.conv = True
+            elif self.conc and etmp.conc:
+                nexpr.conc = True
+            else:
+                nexpr.conv = False
+                nexpr.conc = False
         if Slope.flagRecompRange:
             nexpr.comp_slopes_bound()
         return nexpr
@@ -144,8 +176,9 @@ class Slope:
         nexpr.S = self.S - etmp.S
         nexpr.x = self.x
         nexpr.range = self.range - etmp.range
-        nexpr.conv = False
-        nexpr.conc = False
+        if Slope.flagEvalConv:
+            nexpr.conv = False
+            nexpr.conc = False
         if Slope.flagRecompRange:
             nexpr.comp_slopes_bound()
         return nexpr
@@ -161,8 +194,9 @@ class Slope:
         nexpr.S = self.range * etmp.S + self.S * etmp.range
         nexpr.x = self.x
         nexpr.range = self.range * etmp.range
-        nexpr.conv = False
-        nexpr.conc = False
+        if Slope.flagEvalConv:
+            nexpr.conv = False
+            nexpr.conc = False
         if Slope.flagRecompRange:
             nexpr.comp_slopes_bound()
         return nexpr
@@ -189,18 +223,22 @@ class Slope:
             else:
                 sp = interval.Interval([k, k]) * (self.range ** (k - 1))
         nexpr.S = self.S * sp
-        nexpr.conv = False
-        nexpr.conc = False
-        if k % 2:
-            if self.range[0] >= 0:
-                nexpr.conv = self.conv
-            elif self.range[1] <= 0:
-                nexpr.conv = self.conc
-        else:
-            if self.range[0] >= 0:
-                nexpr.conv = self.conv
-            elif self.range[1] <= 0:
-                nexpr.conc = self.conc
+        if Slope.flagEvalConv:
+            nexpr.conv = False
+            nexpr.conc = False
+            nexpr.va = self.va ** k
+            nexpr.vb = self.vb ** k
+            nexpr.c = self.c
+            if k % 2:
+                if self.range[0] >= 0:
+                    nexpr.conv = self.conv
+                elif self.range[1] <= 0:
+                    nexpr.conv = self.conc
+            else:
+                if self.range[0] >= 0:
+                    nexpr.conv = self.conv
+                elif self.range[1] <= 0:
+                    nexpr.conc = self.conc
         if Slope.flagRecompRange:
             nexpr.comp_slopes_bound()
         return nexpr
@@ -226,8 +264,12 @@ class const(Slope):
         self.S = interval.Interval([0,0])
         self.x = interval.Interval([x[0], x[1]])
         self.range = interval.Interval([value, value])
-        self.conc = True
-        self.conv = True
+        if Slope.flagEvalConv:
+            self.conc = True
+            self.conv = True
+            self.a = x[0]
+            self.b = x[1]
+            self.c = value
 
 # Literal
 # class ident(Slope):
@@ -243,8 +285,9 @@ class sin(Slope):
         self.x = eother.x
         self.value = math.sin(eother.value)
         self.range = interval.sin(eother.range)
-        self.conv = False
-        self.conc = False
+        if Slope.flagEvalConv:
+            self.conv = False
+            self.conc = False
         sp = interval.Interval([0, 0])
         if eother.value == eother.range[0] or eother.value == eother.range[1]:
             sp = interval.cos(eother.range)
@@ -269,8 +312,9 @@ class cos(Slope):
         self.x = eother.x
         self.value = math.cos(eother.value)
         self.range = interval.cos(eother.range)
-        self.conv = False
-        self.conc = False
+        if Slope.flagEvalConv:
+            self.conv = False
+            self.conc = False
         sp = interval.Interval([0, 0])
         if eother.value == eother.range[0] or eother.value == eother.range[1]:
             sp = - interval.sin(eother.range)
@@ -297,12 +341,18 @@ class exp(Slope):
         self.x = eother.x
         self.value = math.exp(eother.value)
         self.range = interval.exp(eother.range)
-        self.conv = eother.conv
-        self.conc = False
+        if Slope.flagEvalConv:
+            self.conv = eother.conv
+            self.conc = False
+            self.va = math.exp(eother.va)
+            self.vb = math.exp(eother.vb)
+            self.c = eother.c
         sp = interval.Interval([0, 0])
         sp = comp_conv_slope(eother.range[0], eother.range[1], eother.value,
                              math.exp(eother.range[0]), math.exp(eother.range[1]), self.value, self.value)
         self.S = eother.S * sp
+        if Slope.flagEvalConv:
+            self.comp_conv_slopes()
         if Slope.flagRecompRange:
             self.comp_slopes_bound()
 
@@ -311,11 +361,17 @@ class log(Slope):
         self.x = eother.x
         self.value = math.log(eother.value)
         self.range = interval.log(eother.range)
-        self.conv = False
-        self.conc = eother.conc
+        if Slope.flagEvalConv:
+            self.conv = False
+            self.conc = eother.conc
+            self.va = math.log(eother.va)
+            self.vb = math.log(eother.vb)
+            self.c = eother.c
         sp = comp_conc_slope(eother.range[0], eother.range[1], eother.value,
                              math.log(eother.range[0]), math.log(eother.range[1]), self.value, 1/eother.value)
         self.S = eother.S * sp
+        if Slope.flagEvalConv:
+            self.comp_conv_slopes()
         if Slope.flagRecompRange:
             self.comp_slopes_bound()
 
@@ -347,7 +403,7 @@ if (__name__ == '__main__'):
         # return x**4 - 10 * x**3 + 35 * x**2 - 50 * x + 24
         # return (log(x + 1.25) - 0.84 * x)**2
         # return  0.02 * x**2 - 0.03 * exp(- (20 * (x - 0.875))**2)
-        return exp(x**2)
+        return log(x**4 + x**2 + x)
         # return x**4 - 12 * x**3 + 47 * x**2 - 60 * x - 20 * exp(-x)
         # return x**6 - 15 * x**4 + 27 * x**2 + 250
 
@@ -357,13 +413,20 @@ if (__name__ == '__main__'):
         # return sin(x) + sin(10 / 3 * x)
     # x = [1,7]
     x = [0.75,1.75]
+
     Slope.flagRecompRange = False
     s = Slope(x)
     ex1 = f(s)
-    Slope.flagRecompRange = True
     print("Slope = ", ex1)
     print("bnd = ", ex1.comp_slopes_bound())
+
+    Slope.flagRecompRange = True
     ex2 = f(Slope(x))
     print("Improved slope = ", ex2)
     print("bnd = ", ex2.comp_slopes_bound())
+
+    Slope.flagEvalConv = True
+    ex3 = f(Slope(x))
+    print("Improved slope + covexity check = ", ex3)
+    print("bnd = ", ex3.comp_slopes_bound())
 
