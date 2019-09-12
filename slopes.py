@@ -5,7 +5,7 @@ from enum import Flag, auto
 
 # Some auxilary functions
 
-def comp_conv_slope(a, b, c, va, vb, vc, dc):
+def comp_conv_slope(a, b, c, va, vb, vc, slp):
     """
     Computes the slope for a convex function
     :param a: left bound of the interval
@@ -13,22 +13,22 @@ def comp_conv_slope(a, b, c, va, vb, vc, dc):
     :param c: point in the interval
     :param va: value at the left end
     :param vb: value at the right end
-    :param vc: point in the interval
-    :param dc: derivative at this point
+    :param vc: value at the point c
+    :param slp: slope at the point c
     :return: the computed slope
     """
     sp = [0, 0]
     if a == c:
-        sp[0] = dc
+        sp[0] = slp[0]
     else:
         sp[0] = (va - vc) / (a - c)
     if b == c:
-        sp[1] = dc
+        sp[1] = slp[1]
     else:
         sp[1] = (vb - vc) / (b - c)
     return interval.Interval(sp)
 
-def comp_conc_slope(a, b, c, va, vb, vc, dc):
+def comp_conc_slope(a, b, c, va, vb, vc, slp):
     """
     Computes the slope for a concave function
     :param a: left bound of the interval
@@ -36,17 +36,17 @@ def comp_conc_slope(a, b, c, va, vb, vc, dc):
     :param c: point in the interval
     :param va: value at the left end
     :param vb: value at the right end
-    :param vc: point in the interval
-    :param dc: derivative at this point
+    :param vc: value at point c
+    :param slp: derivative at point c
     :return: the computed slope
     """
     sp = [0, 0]
     if a == c:
-        sp[1] = dc
+        sp[1] = slp[1]
     else:
         sp[1] = (va - vc) / (a - c)
     if b == c:
-        sp[0] = dc
+        sp[0] = slp[0]
     else:
         sp[0] = (vb - vc) / (b - c)
     return interval.Interval(sp)
@@ -110,9 +110,9 @@ class Slope:
         :return:
         """
         if self.conv:
-            s = comp_conv_slope(self.x[0], self.x[1], self.c, self.va, self.vb, self.value, 0)
+            s = comp_conv_slope(self.x[0], self.x[1], self.c, self.va, self.vb, self.value, self.S)
         elif self.conc:
-            s = comp_conc_slope(self.x[0], self.x[1], self.c, self.va, self.vb, self.value, 0)
+            s = comp_conc_slope(self.x[0], self.x[1], self.c, self.va, self.vb, self.value, self.S)
         print("s = ", s, "self.S = ", self.S)
         self.S.intersec(s)
 
@@ -325,10 +325,12 @@ class cos(Slope):
             if piu == pil + 1:
                 if piu % 2 == 0:
                     sp = comp_conc_slope(eother.range[0], eother.range[1], eother.value,
-                                         math.cos(eother.range[0]), math.cos(eother.range[1]), self.value, -math.sin(eother.value))
+                                         math.cos(eother.range[0]), math.cos(eother.range[1]), self.value,
+                                         interval.Interval([-math.sin(eother.value), -math.sin(eother.value)]))
                 else:
                     sp = comp_conv_slope(eother.range[0], eother.range[1], eother.value,
-                                         math.cos(eother.range[0]), math.cos(eother.range[1]), self.value, -math.sin(eother.value))
+                                         math.cos(eother.range[0]), math.cos(eother.range[1]), self.value,
+                                         interval.Interval([-math.sin(eother.value), -math.sin(eother.value)]))
             else:
                 sp = - interval.sin(eother.range)
         self.S = eother.S * sp
@@ -349,7 +351,8 @@ class exp(Slope):
             self.c = eother.c
         sp = interval.Interval([0, 0])
         sp = comp_conv_slope(eother.range[0], eother.range[1], eother.value,
-                             math.exp(eother.range[0]), math.exp(eother.range[1]), self.value, self.value)
+                             math.exp(eother.range[0]), math.exp(eother.range[1]),
+                             self.value, interval.Interval([self.value, self.value]))
         self.S = eother.S * sp
         if Slope.flagEvalConv:
             self.comp_conv_slopes()
@@ -368,7 +371,8 @@ class log(Slope):
             self.vb = math.log(eother.vb)
             self.c = eother.c
         sp = comp_conc_slope(eother.range[0], eother.range[1], eother.value,
-                             math.log(eother.range[0]), math.log(eother.range[1]), self.value, 1/eother.value)
+                             math.log(eother.range[0]), math.log(eother.range[1]),
+                             self.value, interval.Interval([1/eother.value, 1/eother.value]))
         self.S = eother.S * sp
         if Slope.flagEvalConv:
             self.comp_conv_slopes()
