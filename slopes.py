@@ -132,15 +132,21 @@ class Slope:
         nexpr.x = self.x
         nexpr.range = - self.range
         if Slope.flagEvalConv:
-            if not (nexpr.conc and nexpr.conv):
+            nexpr.va = - self.va
+            nexpr.vb = - self.vb
+            nexpr.c = self.c
+            if not (self.conc and self.conv):
                 if self.conv:
                     nexpr.conc = True
                     nexpr.conv = False
-                elif nexpr.conc:
-                    self.conv = True
+                elif self.conc:
+                    nexpr.conv = True
                     nexpr.conc = False
-        if Slope.flagRecompRange:
-            nexpr.comp_slopes_bound()
+                else:
+                    nexpr.conv = False
+                    nexpr.conc = False
+        # if Slope.flagRecompRange:
+        #     nexpr.comp_slopes_bound()
         return nexpr
 
 
@@ -162,6 +168,7 @@ class Slope:
             else:
                 nexpr.conv = False
                 nexpr.conc = False
+            nexpr.comp_conv_slopes()
         if Slope.flagRecompRange:
             nexpr.comp_slopes_bound()
         return nexpr
@@ -229,11 +236,11 @@ class Slope:
             nexpr.va = self.va ** k
             nexpr.vb = self.vb ** k
             nexpr.c = self.c
-            if k % 2:
+            if k % 2 == 1:
                 if self.range[0] >= 0:
                     nexpr.conv = self.conv
                 elif self.range[1] <= 0:
-                    nexpr.conv = self.conc
+                    nexpr.conc = self.conc
             else:
                 if self.range[0] >= 0:
                     nexpr.conv = self.conv
